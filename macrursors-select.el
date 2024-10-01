@@ -1,6 +1,6 @@
 (require 'macrursors)
 (require 'thingatpt)
-(require 'cl)
+(require 'cl-lib)
 (require 'select)
 
 (defun macrursors-select--set (beg end &optional type)
