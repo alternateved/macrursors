@@ -136,7 +136,16 @@ and re-enable them in `macrursors-post-finish-hook'."
     (overlay-put ov 'macrursors-type 'cursor)
     (push ov macrursors--overlays)))
 
-(defun macrursors--remove-overlays ()
+(defun macrursors--remove-overlays (arg)
+  "Remove ARG overlays from current buffer and start kmacro recording."
+  (dotimes (_ (- arg))
+    (and macrursors--overlays
+         (delete-overlay (car macrursors--overlays)))
+    (cl-callf cdr macrursors--overlays))
+  (when (> (length macrursors--overlays) 0)
+    (macrursors-start)))
+
+(defun macrursors--remove-all-overlays ()
   "Remove all overlays from current buffer."
   (mapc #'delete-overlay macrursors--overlays)
   (setq macrursors--overlays nil)
@@ -277,11 +286,7 @@ beginning and ending positions."
     (save-excursion
       (cond
        ((< arg 0)  ; Remove cursors
-        (dotimes (_ (- arg))
-          (and macrursors--overlays
-               (delete-overlay (car macrursors--overlays)))
-          (cl-callf cdr macrursors--overlays))
-        (macrursors-start))
+        (macrursors--remove-overlays arg))
        ((stringp region) ; Mark next instance of some string
         (goto-char end)
         (dotimes (_ arg)
@@ -315,11 +320,7 @@ beginning and ending positions."
     (save-excursion
       (cond
        ((< arg 0) ; Remove cursors
-        (dotimes (_ (- arg))
-          (and macrursors--overlays
-               (delete-overlay (car macrursors--overlays)))
-          (cl-callf cdr macrursors--overlays))
-        (macrursors-start))
+        (macrursors--remove-overlays arg))
        ((stringp region) ; Mark next instance of some string
         (goto-char beg)
         (dotimes (_ arg)
@@ -476,10 +477,7 @@ beginning and ending positions."
         bounded)
     (save-excursion
       (if (< arg 0)
-          (dotimes (_ (- arg))
-            (and macrursors--overlays
-                 (delete-overlay (car macrursors--overlays)))
-            (cl-callf cdr macrursors--overlays))
+          (macrursors--remove-overlays arg)
         (dotimes (_ arg)
           (while (and (setq bounded
                             (and (line-move-1 1 'no-error)
@@ -503,10 +501,7 @@ beginning and ending positions."
         bounded)
     (save-excursion
       (if (< arg 0)
-          (dotimes (_ (- arg))
-            (and macrursors--overlays
-                 (delete-overlay (car macrursors--overlays)))
-            (cl-callf cdr macrursors--overlays))
+          (macrursors--remove-overlays arg)
         (dotimes (_ arg)
           (while (and (setq bounded
                             (and (line-move-1 -1 'no-error)
@@ -660,7 +655,7 @@ Else, mark all lines."
     (macrursors--apply-kmacros)
     (run-hook-wrapped 'macrursors-post-finish-hook
                       #'macrursors--toggle-modes +1)
-    (macrursors--remove-overlays)
+    (macrursors--remove-all-overlays)
     (macrursors-mode -1)))
 
 ;;;###autoload
@@ -674,7 +669,7 @@ Else, mark all lines."
 	  (end-kbd-macro)
 	  (macrursors-start)))
     (when defining-kbd-macro (end-kbd-macro))
-    (macrursors--remove-overlays)
+    (macrursors--remove-all-overlays)
     (macrursors-mode -1)))
 
 (provide 'macrursors)
