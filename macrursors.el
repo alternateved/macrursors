@@ -18,7 +18,7 @@
 ;; The faces were inspired by multiple-cursors.
 
 ;; TODO:
-;; - Support for add cursor on click
+;; - DONE Support for add cursor on click
 ;; - DONE Cursors on lines directly above/below the point
 ;; - Documentation
 
@@ -556,6 +556,36 @@ Else, mark all lines."
   (if (and transient-mark-mode mark-active (not (eq (mark) (point))))
       (macrursors-mark-all-instances-of)
     (macrursors-mark-all-lines)))
+
+;;;###autoload
+(defun macrursors-add-cursor-on-click (event)
+    "Add or remove a cursor on click EVENT."
+    (interactive "e")
+    (mouse-minibuffer-check event)
+    (when defining-kbd-macro (end-kbd-macro))
+    (let ((position (event-end event)))
+      (if (not (windowp (posn-window position)))
+          (error "Position not in text area of window"))
+      (select-window (posn-window position))
+      (let ((pt (posn-point position))
+            (cursor-positions (macrursors--get-overlay-positions)))
+        (if (numberp pt)
+            (let ((existing (member pt cursor-positions)))
+              ;; Check if there exists cursor at point
+              (if existing
+                  (progn
+                    (remove-overlays pt (1+ pt))
+                    (setq macrursors--overlays
+                          (seq-remove (lambda (ov)
+                                        (null (overlay-buffer ov)))
+                                      macrursors--overlays))
+                    ;; Start defining macro if there are still active cursors
+                    (when (> (length macrursors--overlays) 0)
+                      (macrursors-start)))
+                (save-excursion
+                  (macrursors--add-overlay-at-point pt)
+                  (setq macrursors--instance 'point)
+                  (macrursors-start))))))))
 
 
 ;;;; Functions that apply the defined macro across all macrursors
