@@ -128,12 +128,23 @@ repeatedly by pressing `\\<macrursors-mark-map>\\[macrursors-select]'."
     map))
 
 (defun macrursors-select-clear ()
+  "Remove secondary selection."
   (interactive)
   (and mouse-secondary-overlay
        (eq (overlay-buffer mouse-secondary-overlay) (current-buffer))
        (delete-overlay mouse-secondary-overlay)))
 
+;;;###autoload
+(defun macrursors-select-toggle ()
+  "Remove existings secondary selection or create a new one from an active region."
+  (interactive)
+  (if (secondary-selection-exist-p)
+      (macrursors-select-clear)
+    (macrursors-select)))
+
 (define-key macrursors-mark-map (kbd "SPC") #'macrursors-select)
 (define-key macrursors-mark-map (kbd "C-g") #'macrursors-select-clear)
 
 (provide 'macrursors-select)
+
+;;; macrursors-select.el ends here
