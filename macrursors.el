@@ -372,6 +372,7 @@ beginning and ending positions."
 ;;;###autoload
 (defun macrursors-mark-next-from-isearch (&optional arg)
   (interactive "p")
+  (when defining-kbd-macro (end-kbd-macro))
   (let* ((regexp (macrursors--isearch-regexp))
          (search-end (and (macrursors--inside-secondary-selection)
                           (overlay-end mouse-secondary-overlay))))
@@ -386,9 +387,10 @@ beginning and ending positions."
 ;;;###autoload
 (defun macrursors-mark-previous-from-isearch (&optional arg)
   (interactive "p")
+  (when defining-kbd-macro (end-kbd-macro))
   (let* ((regexp (macrursors--isearch-regexp))
          (search-start (and (macrursors--inside-secondary-selection)
-                          (overlay-start mouse-secondary-overlay)))
+                            (overlay-start mouse-secondary-overlay)))
          orig-point)
     (setq orig-point (min (point) isearch-other-end))
     (goto-char (max (point) isearch-other-end))
