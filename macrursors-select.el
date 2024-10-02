@@ -14,10 +14,13 @@ message the user about the type of object selected."
   (move-overlay mouse-secondary-overlay beg end (current-buffer))
   (overlay-put mouse-secondary-overlay 'macrursors-select-type type)
   (when type (message "%S" type))
-  (gui-set-selection
-   'SECONDARY
-   (buffer-substring (overlay-start mouse-secondary-overlay)
-                     (overlay-end mouse-secondary-overlay))))
+
+  ;; https://lists.gnu.org/archive/html/bug-gnu-emacs/2024-06/msg01192.html
+  (unless (featurep 'pgtk)
+    (gui-set-selection
+     'SECONDARY
+     (buffer-substring (overlay-start mouse-secondary-overlay)
+                       (overlay-end mouse-secondary-overlay)))))
 
 (defun macrursors-select--region ()
   (macrursors-select--set (region-beginning) (region-end) 'region)
