@@ -343,7 +343,7 @@ beginning and ending positions."
 
 ;;;; Commands to create macrursors from Isearch
 (defun macrursors--isearch-regexp ()
-  (or isearch-success (user-error "Nothing to match."))
+  (or isearch-success (user-error "Nothing to match"))
   (prog1
       (cond
        ((functionp isearch-regexp-function)
@@ -407,70 +407,79 @@ beginning and ending positions."
 
 
 ;;;; Commands to create macrursors at syntactic units ("things")
-;;;###autoload
-(defmacro macrursors--defun-mark-all (name thing func)
-  `(defun ,name ()
-     (interactive)
-     (when mark-active (deactivate-mark))
-     (let ((end-of-thing (cdr (bounds-of-thing-at-point ,thing))))
-       (if end-of-thing
-	         (goto-char end-of-thing)
-	       (funcall ,func)))
-     (let ((orig-point (point))
-	         (start (if (macrursors--inside-secondary-selection)
-		                  (overlay-start mouse-secondary-overlay)
-		                0))
-	         (end (if (macrursors--inside-secondary-selection)
-		                (overlay-end mouse-secondary-overlay)
-		              (point-max))))
-       (save-excursion
-	       (goto-char start)
-	       (while (and (let ((curr (point)))
-		                   (funcall ,func)
-		                   (not (= (point) curr)))
-		                 (<= (point) end))
-	         (unless (= (point) orig-point)
-	           (macrursors--add-overlay-at-point (point)))))
-       (setq macrursors--instance ,thing)
-       (macrursors-start))))
+(defun macrursors--mark-all (thing func)
+  (lambda ()
+    (when mark-active (deactivate-mark))
+    (let ((end-of-thing (cdr (bounds-of-thing-at-point thing))))
+      (if end-of-thing
+          (goto-char end-of-thing)
+        (funcall func)))
+    (let ((orig-point (point))
+          (start (if (macrursors--inside-secondary-selection)
+                     (overlay-start mouse-secondary-overlay)
+                   0))
+          (end (if (macrursors--inside-secondary-selection)
+                   (overlay-end mouse-secondary-overlay)
+                 (point-max))))
+      (save-excursion
+        (goto-char start)
+        (while (and (let ((curr (point)))
+                      (funcall func)
+                      (not (= (point) curr)))
+                    (<= (point) end))
+          (unless (= (point) orig-point)
+            (macrursors--add-overlay-at-point (point)))))
+      (setq macrursors--instance thing)
+      (macrursors-start))))
 
 ;;;###autoload
-(macrursors--defun-mark-all macrursors-mark-all-words
-			                      'word
-			                      #'forward-word)
+(defun macrursors-mark-all-words ()
+  (interactive)
+  (funcall (macrursors--mark-all 'word #'forward-word)))
+
 ;;;###autoload
-(macrursors--defun-mark-all macrursors-mark-all-symbols
-			                      'symbol
-			                      (lambda ()
-			                        (call-interactively #'forward-symbol)))
+(defun macrursors-mark-all-symbols ()
+  (interactive)
+  (funcall
+   (macrursors--mark-all
+    'symbol
+		(lambda ()
+			(call-interactively #'forward-symbol)))))
+
 ;;;###autoload
-(macrursors--defun-mark-all macrursors-mark-all-lists
-			                      'list
-			                      #'forward-list)
+(defun macrursors-mark-all-lists ()
+  (interactive)
+  (funcall (macrursors--mark-all 'list #'forward-list)))
+
 ;;;###autoload
-(macrursors--defun-mark-all macrursors-mark-all-sexps
-			                      'sexp
-			                      #'forward-sexp)
+(defun macrursors-mark-all-sexps ()
+  (interactive)
+  (funcall (macrursors--mark-all 'sexp #'forward-sexp)))
+
 ;;;###autoload
-(macrursors--defun-mark-all macrursors-mark-all-defuns
-			                      'defun
-			                      #'end-of-defun)
+(defun macrursors-mark-all-defuns ()
+  (interactive)
+  (funcall (macrursors--mark-all 'defun #'end-of-defun)))
+
 ;;;###autoload
-(macrursors--defun-mark-all macrursors-mark-all-numbers
-			                      'number
-			                      #'macrursors--forward-number)
+(defun macrursors-mark-all-numbers ()
+  (interactive)
+  (funcall (macrursors--mark-all 'number #'macrursors--forward-number)))
+
 ;;;###autoload
-(macrursors--defun-mark-all macrursors-mark-all-sentences
-			                      'sentence
-			                      #'forward-sentence)
+(defun macrursors-mark-all-sentences ()
+  (interactive)
+  (funcall (macrursors--mark-all 'sentence #'forward-sentence)))
+
 ;; FIXME there is no forward-url function
-;; (macrursors--defun-mark-all macrursors-mark-all-urls
-;; 			    'url
-;; 			    #'forward-url)
+;; (defun macrursors-mark-all-urls ()
+;;   (interactive)
+;;   (funcall (macrursors--mark-all 'url #'forward-url)))
+
 ;; FIXME there is no forward-email function
-;; (macrursors--defun-mark-all macrursors-mark-all-sexp
-;; 			    'word
-;; 			    #'forward-sexp)
+;; (defun macrursors-mark-all-mails ()
+;;   (interactive)
+;;   (funcall(macrursors--mark-all 'mail #'forward-mail)))
 
 ;;;###autoload
 (defun macrursors-mark-next-line (arg &optional search-end)
