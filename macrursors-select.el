@@ -1,3 +1,12 @@
+;;; macrursors-select.el --- Secondary selection for macrursors -*- lexical-binding: t; -*-
+
+;;; Commentary:
+;; Utilities for creating, expanding and narrowing secondary selection in which
+;; macrursors will be placed. When secondary selection is active, no additional
+;; cursor can be placed outside of it.
+
+;;; Code:
+
 (require 'macrursors)
 (require 'thingatpt)
 (require 'cl-lib)
@@ -31,7 +40,7 @@ message the user about the type of object selected."
               (bounds (bounds-of-thing-at-point type))
               (beg (car bounds))
               (end (cdr bounds)))
-     (macrursors-select--set beg end type)))
+    (macrursors-select--set beg end type)))
 
 (defcustom macrursors-select-types
   '((prog-mode defun list line)
@@ -64,8 +73,8 @@ calling `macrursors-select'."
                      else do (delete-overlay ov)
                      finally return live-overlays))
       (when defining-kbd-macro
-	  (end-kbd-macro)
-	  (macrursors-start)))))
+	      (end-kbd-macro)
+	      (macrursors-start)))))
 
 (defun macrursors-select--expand-cursors (&optional search-start search-end)
   "Expand macrursors inside bounds SEARCH-START and SEARCH-END.
@@ -101,19 +110,19 @@ repeatedly by pressing `\\<macrursors-mark-map>\\[macrursors-select]'."
                 search-end   (region-end))
           (macrursors-select--region))
       (let ((types (cl-some (lambda (entry) (and (derived-mode-p (car entry))
-                                            (cdr entry)))
+                                                 (cdr entry)))
                             macrursors-select-types)))
         (setq search-start  (overlay-start mouse-secondary-overlay)
               search-end    (overlay-end mouse-secondary-overlay))
         (cl-loop with sel-type =
-                     (or
-                      (get-char-property (max (1- (point)) (point-min)) 'macrursors-select-type)
-                      (get-char-property (min (1+ (point)) (point-max)) 'macrursors-select-type))
-                     for (head . tail) on (cons nil types)
-                     when (eq sel-type head)
-                     if (macrursors-select--type (or (car tail) (car types)))
-                     return t
-                     else do (setq sel-type (car tail)))))
+                 (or
+                  (get-char-property (max (1- (point)) (point-min)) 'macrursors-select-type)
+                  (get-char-property (min (1+ (point)) (point-max)) 'macrursors-select-type))
+                 for (head . tail) on (cons nil types)
+                 when (eq sel-type head)
+                 if (macrursors-select--type (or (car tail) (car types)))
+                 return t
+                 else do (setq sel-type (car tail)))))
     ;; Remove cursors outside
     (macrursors-select--filter-cursors)
     ;; Add new cursors inside
