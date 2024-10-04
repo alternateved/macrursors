@@ -25,11 +25,12 @@ message the user about the type of object selected."
   (when type (message "%S" type))
 
   ;; https://lists.gnu.org/archive/html/bug-gnu-emacs/2024-06/msg01192.html
-  (unless (featurep 'pgtk)
-    (gui-set-selection
-     'SECONDARY
-     (buffer-substring (overlay-start mouse-secondary-overlay)
-                       (overlay-end mouse-secondary-overlay)))))
+  (let ((selection (buffer-substring
+                    (overlay-start mouse-secondary-overlay)
+                    (overlay-end mouse-secondary-overlay))))
+    (condition-case nil
+        (gui-set-selection 'SECONDARY selection)
+      (error selection))))
 
 (defun macrursors-select--region ()
   (macrursors-select--set (region-beginning) (region-end) 'region)
